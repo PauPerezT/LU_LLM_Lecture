@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-Attention Explorer — Fundamentals of Large Language Models</title>
+<style>
+:root{
+  --blue:#2F586E; --blue-d:#1B3A47; --grey:#7F7F7F; --light:#E9ECEF;
+  --red:#C0392B; --green:#2E7D32; --ink:#1A1A1A; --line:#D7DDE1;
+}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 Arial,Helvetica,sans-serif;color:var(--ink);background:#fff}
+header{background:#000;color:#fff;padding:26px 28px 22px}
+header .rule{height:3px;background:#AFC4D0;margin:0 0 18px}
+header h1{margin:0;font-size:26px;letter-spacing:.2px}
+header p{margin:6px 0 0;font-size:14px;color:#C9D4DA}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.cta{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+.btn{display:inline-block;border:0;border-radius:6px;padding:11px 18px;font:inherit;
+     font-weight:bold;font-size:14px;cursor:pointer;text-decoration:none}
+.btn-primary{background:#fff;color:#000}
+.btn-primary:hover{background:var(--light)}
+.btn-ghost{background:transparent;color:#fff;border:1.5px solid #6E8694}
+.btn-ghost:hover{border-color:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-blue:hover{background:var(--blue-d)}
+.btn-grey{background:var(--light);color:var(--blue)}
+nav{border-bottom:3px solid #000;background:#fff;position:sticky;top:0;z-index:5}
+nav .wrap{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-3px;
+  padding:14px 16px;font:inherit;font-weight:bold;font-size:14px;color:var(--grey);cursor:pointer}
+nav button:hover{color:var(--ink)}
+nav button.on{color:var(--blue);border-bottom-color:var(--blue)}
+section{display:none;padding:26px 0 60px}
+section.on{display:block}
+h2{font-size:22px;margin:0 0 4px}
+h2 .b{color:var(--blue)}
+.sub{color:var(--grey);font-size:14px;margin:0 0 20px}
+.banner{background:var(--blue);color:#fff;border-radius:7px;padding:11px 16px;
+  font-weight:bold;font-size:15px;text-align:center;margin:0 0 20px}
+.greybar{background:var(--grey);color:#fff;border-radius:7px;padding:12px 16px;font-size:14px;margin:20px 0 0}
+.card{border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin:0 0 16px;background:#fff}
+.card h3{margin:0 0 8px;font-size:15px;color:var(--blue)}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.col{flex:1 1 320px;min-width:300px}
+.tok{display:inline-block;background:var(--light);border-radius:6px;padding:8px 12px;
+  margin:0 6px 6px 0;cursor:pointer;font-size:15px;border:2px solid transparent}
+.tok:hover{border-color:#B9C6CE}
+.tok.sel{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tok small{display:block;font-size:11px;color:var(--grey);text-align:center}
+.tok.sel small{color:#C9D4DA}
+.gridwrap{overflow-x:auto;max-width:100%}
+table.grid{border-collapse:separate;border-spacing:2px;font-size:12px;
+  table-layout:fixed}
+table.grid col.lab{width:90px}
+table.grid col.cell{width:46px}
+table.grid td{height:32px;text-align:center;border-radius:3px;cursor:pointer;
+  overflow:hidden;padding:0}
+table.grid td.lab{background:none;color:var(--grey);text-align:right;padding-right:7px;
+  white-space:nowrap;cursor:default}
+table.grid td.col{color:var(--grey);height:86px;vertical-align:top;cursor:default;
+  writing-mode:vertical-rl;transform:rotate(180deg);padding-top:6px;white-space:nowrap}
+table.grid tr.hl td:not(.lab){outline:2px solid var(--red)}
+.bars{margin-top:8px}
+.bar{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:13px}
+.bar .n{width:96px;text-align:right;color:var(--grey)}
+.bar .t{flex:1;background:var(--light);border-radius:3px;height:16px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--blue)}
+.bar .v{width:52px;font-variant-numeric:tabular-nums}
+label.ctl{display:block;font-size:13px;color:var(--grey);margin:12px 0 4px}
+input[type=range]{width:100%}
+code,.mono{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px}
+pre{background:var(--light);border-radius:6px;padding:12px 14px;overflow:auto;font-size:13px;margin:8px 0}
+.eq{background:var(--light);border-radius:7px;padding:13px;text-align:center;font-size:18px;margin:10px 0}
+.eq.blue{background:var(--blue);color:#fff}
+.chip{display:inline-block;background:var(--light);color:var(--blue);border-radius:20px;
+  padding:5px 13px;font-size:13px;font-weight:bold;margin:0 6px 6px 0}
+.note{background:#fff;border:2px solid var(--line);border-radius:7px;padding:12px 14px;font-size:14px;margin:6px 0}
+.note.bad{border-color:var(--red)}
+.hide{display:none}
+footer{border-top:1px solid var(--line);color:var(--grey);font-size:12px;padding:16px 0 40px}
+.warn{background:#FFF6F5;border:1px solid #E8C4BF;color:#7A2A20;border-radius:7px;
+  padding:10px 14px;font-size:13px;margin:0 0 18px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="rule"></div>
+    <h1>Self-Attention Explorer</h1>
+    <p>Fundamentals of Large Language Models &middot; <em>Next-Word Prediction and Self-Attention</em><br>
+       Vorlesung „Datensynthese und Sprachmodelle in der Medizin“ &middot; Dr.-Ing. Paula A. Pérez-Toro</p>
+    <div class="cta">
+      <a class="btn btn-primary" id="goEx" href="#">▶ Go to the exercise</a>
+      <a class="btn btn-ghost" id="btnColab" href="#" target="_blank" rel="noopener">Open the notebook in Colab</a>
+      <a class="btn btn-ghost" id="btnDl" href="notebooks/llm_student_exercise.ipynb" download>Download the notebook</a>
+    </div>
+  </div>
+</header>
+
+<nav><div class="wrap" id="tabs"></div></nav>
+
+<div class="wrap">
+
+<!-- ============================================================ TOKENS -->
+<section id="t-tokens">
+  <h2>Step 1 &middot; <span class="b">Tokenization</span></h2>
+  <p class="sub">A token is not a word. Click a token to see what the model actually receives.</p>
+  <div class="banner">The model never sees letters — it sees token IDs</div>
+  <div id="tokRow"></div>
+  <div class="row" style="margin-top:18px">
+    <div class="col card"><h3>Look at „penicillin“</h3>
+      It arrives as <b>two</b> tokens, <span class="mono">penic</span> + <span class="mono">illin</span>.
+      Rare medical words get assembled from pieces the tokenizer already knows.</div>
+    <div class="col card"><h3>Why this matters in medicine</h3>
+      German compounds are worse: <i>Herzkatheteruntersuchung</i> can split into a handful of
+      fragments. A vocabulary built on general web text fits clinical German badly.</div>
+  </div>
+</section>
+
+<!-- ========================================================= EMBEDDING -->
+<section id="t-embed">
+  <h2>Step 2 &middot; <span class="b">Embedding + position</span></h2>
+  <p class="sub">A lookup, plus where the token stands.</p>
+  <div class="eq">e<sub>t</sub> &nbsp;=&nbsp; E[x<sub>t</sub>] &nbsp;+&nbsp; p<sub>t</sub></div>
+  <div class="row">
+    <div class="col card">
+      <h3>Move the token along the sentence</h3>
+      <label class="ctl">position t = <b id="posV">3</b></label>
+      <input type="range" id="pos" min="0" max="7" value="3">
+      <table class="mono" id="embTab" style="margin-top:12px;border-spacing:0 4px"></table>
+    </div>
+    <div class="col card">
+      <h3>p<sub>t</sub> is not learned</h3>
+      <p style="font-size:14px">It is computed, so the model can tell position 3 from position 30
+      even in a sentence longer than anything it saw in training:</p>
+      <pre>p[2i]   = sin(t / 10000^(2i/d))
+p[2i+1] = cos(t / 10000^(2i/d))</pre>
+      <p style="font-size:13px;color:var(--grey)">Here d = 4, so there are two sin/cos pairs.</p>
+    </div>
+  </div>
+  <div class="greybar">But this vector is the same in every sentence — it has not read anything yet.
+    That is what Step 3 is for.</div>
+</section>
+
+<!-- =============================================================== QKV -->
+<section id="t-qkv">
+  <h2>Step 3 &middot; <span class="b">Query, Key, Value</span></h2>
+  <p class="sub">The lecture's two-token toy — the same numbers as the exercise. Drag e₂ and watch everything downstream move.</p>
+  <div class="row">
+    <div class="col card">
+      <h3>The givens</h3>
+      <pre id="given"></pre>
+      <label class="ctl">e₂ &nbsp;=&nbsp; ( <b id="e2xV">0</b> , <b id="e2yV">2</b> )</label>
+      <input type="range" id="e2x" min="-3" max="3" step="0.5" value="0">
+      <input type="range" id="e2y" min="-3" max="3" step="0.5" value="2">
+      <p style="font-size:13px;color:var(--grey);margin:10px 0 0">
+        Reset to (0, 2) for the exercise values.</p>
+    </div>
+    <div class="col card">
+      <h3>q and k, as directions</h3>
+      <svg id="vec" viewBox="0 0 300 220" style="width:100%;height:220px"></svg>
+      <p style="font-size:13px;color:var(--grey);margin:0">
+        The score is a dot product: it asks only whether the two directions agree.</p>
+    </div>
+    <div class="col card">
+      <h3>What comes out</h3>
+      <pre id="qkvOut"></pre>
+      <div class="bars" id="qkvBars"></div>
+    </div>
+  </div>
+  <div class="greybar" id="qkvMsg"></div>
+</section>
+
+<!-- ========================================================= ATTENTION -->
+<section id="t-attn">
+  <h2>Step 4 &middot; <span class="b">The attention pattern</span></h2>
+  <p class="sub">The whole sentence at once. Rows ask, columns answer. Click any row.</p>
+  <div class="row">
+    <div style="flex:0 0 auto;min-width:0">
+      <div class="card">
+        <div style="margin-bottom:10px">
+          <label style="font-size:13px"><input type="checkbox" id="mask" checked> causal mask</label>
+          &nbsp;&nbsp;
+          <label style="font-size:13px"><input type="checkbox" id="soft" checked> softmax</label>
+        </div>
+        <div class="gridwrap"><table class="grid" id="grid"></table></div>
+      </div>
+    </div>
+    <div class="col" style="min-width:320px">
+      <div class="card">
+        <h3 id="rowTitle">query = „ceftriaxone“</h3>
+        <div class="bars" id="rowBars"></div>
+        <p style="font-size:13px;color:var(--grey)" id="rowSum"></p>
+      </div>
+      <div class="card">
+        <h3>What to look for</h3>
+        <p style="font-size:14px;margin:0">The bottom row is the query <b>„ceftriaxone“</b>. Almost half
+        its attention lands on <b>„penicillin“</b> — nine tokens back. That is the reach an n-gram
+        does not have. Turn the mask off and watch the model cheat by reading the future.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================== GENERATE -->
+<section id="t-gen">
+  <h2>Step 5 &middot; <span class="b">From prediction to synthesis</span></h2>
+  <p class="sub">The same loop run forward. This is the Datensynthese half of the module.</p>
+  <div class="banner">Sample a token, feed it back in, repeat — and the model writes</div>
+  <div class="row">
+    <div class="col card">
+      <h3>Temperature</h3>
+      <label class="ctl">T = <b id="tempV">1.0</b></label>
+      <input type="range" id="temp" min="0.1" max="2.5" step="0.1" value="1">
+      <div class="bars" id="tempBars"></div>
+      <button class="btn btn-blue" id="draw" style="margin-top:12px">Sample 12 times</button>
+      <p class="mono" id="draws" style="margin:10px 0 0;font-size:13px"></p>
+    </div>
+    <div class="col card">
+      <h3>What the slider does</h3>
+      <div class="eq">p<sub>i</sub> = exp(z<sub>i</sub>/T) / &Sigma;<sub>j</sub> exp(z<sub>j</sub>/T)</div>
+      <p style="font-size:14px">Low T repeats the same safe word. High T invents. Same model,
+      same prompt, different note every time — that is what makes synthesis possible, and
+      what makes it need checking.</p>
+      <div class="note bad"><b>The catch.</b> A generated note can be fluent, confident and the
+      opposite of the truth — and the likelihood will not tell you which.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================== EXERCISE -->
+<section id="t-ex">
+  <h2>Your turn &middot; <span class="b">the exercise</span></h2>
+  <p class="sub">Four short lines. On paper first, then in the notebook.</p>
+  <div class="warn" id="repoWarn">
+    <b>Before publishing:</b> set <code>REPO</code> at the top of the
+    <code>&lt;script&gt;</code> in <code>docs/index.html</code> to your
+    <code>user/repository</code> so the Colab and GitHub buttons point at your copy.
+  </div>
+  <div class="row">
+    <div class="col card">
+      <h3>GIVEN</h3>
+      <pre>q   = (2, 2)
+W_K = [[0, 1],
+       [1, 0]]
+W_V = [[1,  1],
+       [1, -1]]
+e1  = (1, 2)     token 1, from the lecture
+e2  = (0, 2)     token 2</pre>
+    </div>
+    <div class="col card">
+      <h3>FIND — in order</h3>
+      <pre>1.  k2 = W_K e2            = ?
+2.  s  = (q·k) / sqrt(2)   = ?
+3.  a  = exp(s) / Σ exp(s) = ?
+4.  Δe = Σ a_i v_i         = ?</pre>
+      <button class="btn btn-grey" id="revealBtn" style="margin-top:4px">Show the solution</button>
+      <pre id="reveal" class="hide">k2 = (2, 0)          v1 = ( 3, -1)
+s  = (4.243, 2.828)  v2 = ( 2, -2)
+a  = (0.80, 0.20)
+Δe = (2.80, -1.20)
+
+Token 2 carries less weight because its key points
+away from the query — attention is a similarity,
+not a distance.</pre>
+    </div>
+  </div>
+  <div class="card" style="border-color:var(--blue);border-width:2px">
+    <h3>Do it in the notebook</h3>
+    <p style="font-size:14px;margin:0 0 14px">Five <code>TODO</code>s, numpy only, nothing to install
+      beyond numpy — it runs offline and checks your answers for you.</p>
+    <div class="cta">
+      <a class="btn btn-blue" id="btnColab2" href="#" target="_blank" rel="noopener">Open in Google Colab</a>
+      <a class="btn btn-grey" id="btnGh" href="#" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn btn-grey" href="notebooks/llm_student_exercise.ipynb" download>Download .ipynb</a>
+      <a class="btn btn-grey" id="btnSol" href="#" target="_blank" rel="noopener">Solution notebook</a>
+    </div>
+  </div>
+  <div class="greybar">We check it together next time.</div>
+</section>
+
+<footer class="wrap">
+  Fundamentals of Large Language Models &middot; Dr.-Ing. Pérez-Toro &middot;
+  companion material. All numbers on this page are the lecture's own toy values,
+  chosen for arithmetic by hand — not measured attention from a trained model.
+</footer>
+</div>
+
+<script>
+/* ----------------------------------------------------------------- *
+ *  SET THIS to your GitHub repository, e.g. "pauperezt/luebeck-llm"  *
+ * ----------------------------------------------------------------- */
+const REPO   = "PauPerezT/LU_LLM_Lecture";
+const BRANCH = "main";
+const NB     = "docs/notebooks/llm_student_exercise.ipynb";
+const NBSOL  = "docs/notebooks/llm_solution.ipynb";
+
+(function wireButtons(){
+  const configured = !REPO.startsWith("USER/");
+  const colab = "https://colab.research.google.com/github/" + REPO + "/blob/" + BRANCH + "/";
+  const gh    = "https://github.com/" + REPO + "/blob/" + BRANCH + "/";
+  const set = (id, url) => { const e = document.getElementById(id); if (e) e.href = url; };
+  set("btnColab",  colab + NB);
+  set("btnColab2", colab + NB);
+  set("btnGh",     gh + NB);
+  set("btnSol",    gh + NBSOL);
+  if (configured) document.getElementById("repoWarn").style.display = "none";
+})();
+
+/* ------------------------------------------------------------- tabs -- */
+const TABS = [["t-tokens","1 · Tokens"],["t-embed","2 · Embedding"],
+              ["t-qkv","3 · Q, K, V"],["t-attn","4 · Attention"],
+              ["t-gen","5 · Synthesis"],["t-ex","Your turn"]];
+const tabBar = document.getElementById("tabs");
+TABS.forEach(([id,label],i)=>{
+  const b=document.createElement("button");
+  b.textContent=label; b.onclick=()=>show(id); b.dataset.t=id;
+  if(i===0) b.className="on";
+  tabBar.appendChild(b);
+});
+function show(id){
+  document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id===id));
+  tabBar.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.t===id));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+show("t-tokens");
+document.getElementById("goEx").onclick = e => { e.preventDefault(); show("t-ex"); };
+
+/* ----------------------------------------------------------- tokens -- */
+const TOKENS = ["Known","allergy","to","penic","illin",";","treated","with","ceftriaxone"];
+const IDS    = [18505,47095,284,3617,15348,26,8776,351,46066];
+const tokRow = document.getElementById("tokRow");
+TOKENS.forEach((t,i)=>{
+  const d=document.createElement("span");
+  d.className="tok"; d.innerHTML = t + "<small>"+IDS[i]+"</small>";
+  d.onclick=()=>{d.classList.toggle("sel")};
+  if(t==="penic"||t==="illin") d.style.borderColor="#C0392B";
+  tokRow.appendChild(d);
+});
+
+/* -------------------------------------------------------- embedding -- */
+const EMB = {t:3};
+function posVec(t,d){const v=[];for(let i=0;i<d/2;i++){
+  const w=Math.pow(10000,(2*i)/d); v.push(Math.sin(t/w)); v.push(Math.cos(t/w));}
+  return v;}
+const E_FEVER=[-0.10,0.80,0.35,-0.42];
+function drawEmb(){
+  const p=posVec(EMB.t,4), rows=[["E[x]  lookup",E_FEVER],["p     position",p],
+    ["e = E[x] + p",E_FEVER.map((v,i)=>v+p[i])]];
+  document.getElementById("embTab").innerHTML = rows.map(([n,v],k)=>
+    "<tr><td style='padding-right:14px;color:#7F7F7F'>"+n+"</td>"+
+    v.map(x=>"<td style='padding:3px 9px;text-align:right;"+
+      (k===2?"font-weight:bold;color:#2F586E":"")+"'>"+x.toFixed(2)+"</td>").join("")+"</tr>").join("");
+  document.getElementById("posV").textContent=EMB.t;
+}
+document.getElementById("pos").oninput=e=>{EMB.t=+e.target.value;drawEmb();};
+drawEmb();
+
+/* --------------------------------------------------------- Q, K, V --- */
+const q=[2,2], W_K=[[0,1],[1,0]], W_V=[[1,1],[1,-1]], e1=[1,2];
+const mv=(M,v)=>[M[0][0]*v[0]+M[0][1]*v[1], M[1][0]*v[0]+M[1][1]*v[1]];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1];
+function softmax(xs,T){T=T||1;const m=Math.max(...xs);
+  const z=xs.map(x=>Math.exp((x-m)/T));const s=z.reduce((a,b)=>a+b,0);return z.map(x=>x/s);}
+document.getElementById("given").textContent =
+  "q   = (2, 2)\nW_K = [[0,1],[1,0]]\nW_V = [[1,1],[1,-1]]\ne1  = (1, 2)";
+function drawQKV(){
+  const e2=[+document.getElementById("e2x").value, +document.getElementById("e2y").value];
+  document.getElementById("e2xV").textContent=e2[0];
+  document.getElementById("e2yV").textContent=e2[1];
+  const k1=mv(W_K,e1), k2=mv(W_K,e2), v1=mv(W_V,e1), v2=mv(W_V,e2);
+  const s=[dot(q,k1)/Math.SQRT2, dot(q,k2)/Math.SQRT2];
+  const a=softmax(s);
+  const de=[a[0]*v1[0]+a[1]*v2[0], a[0]*v1[1]+a[1]*v2[1]];
+  const f=x=>x.toFixed(2).padStart(6);
+  document.getElementById("qkvOut").textContent =
+    "k1 = ("+f(k1[0])+","+f(k1[1])+" )\n"+
+    "k2 = ("+f(k2[0])+","+f(k2[1])+" )\n"+
+    "s  = ("+f(s[0])+","+f(s[1])+" )\n"+
+    "v1 = ("+f(v1[0])+","+f(v1[1])+" )\n"+
+    "v2 = ("+f(v2[0])+","+f(v2[1])+" )\n"+
+    "Δe = ("+f(de[0])+","+f(de[1])+" )";
+  document.getElementById("qkvBars").innerHTML = a.map((w,i)=>
+    "<div class='bar'><span class='n'>token "+(i+1)+"</span><span class='t'><i style='width:"+
+    (w*100).toFixed(1)+"%'></i></span><span class='v'>"+(w*100).toFixed(0)+"%</span></div>").join("");
+  const svg=document.getElementById("vec");
+  const O=[150,110], S=26, P=(v)=>[O[0]+v[0]*S, O[1]-v[1]*S];
+  const arrow=(v,c,lab)=>{const p=P(v);
+    return "<line x1="+O[0]+" y1="+O[1]+" x2="+p[0]+" y2="+p[1]+
+      " stroke='"+c+"' stroke-width='2.5' marker-end='url(#a"+c.slice(1)+")'/>"+
+      "<text x="+(p[0]+6)+" y="+(p[1]-4)+" fill='"+c+"' font-size='12' font-weight='bold'>"+lab+"</text>";};
+  svg.innerHTML =
+    "<defs>"+["2F586E","7F7F7F","C0392B"].map(c=>
+      "<marker id='a"+c+"' markerWidth='8' markerHeight='8' refX='7' refY='3' orient='auto'>"+
+      "<path d='M0,0 L7,3 L0,6 Z' fill='#"+c+"'/></marker>").join("")+"</defs>"+
+    "<line x1='10' y1='"+O[1]+"' x2='290' y2='"+O[1]+"' stroke='#E9ECEF'/>"+
+    "<line x1='"+O[0]+"' y1='10' x2='"+O[0]+"' y2='210' stroke='#E9ECEF'/>"+
+    arrow(q,"#2F586E","q")+arrow(k1,"#7F7F7F","k₁")+arrow(k2,"#C0392B","k₂");
+  const cos = dot(q,k2)/(Math.hypot(...q)*Math.hypot(...k2) || 1);
+  document.getElementById("qkvMsg").textContent =
+    "cos∠(q, k₂) = "+cos.toFixed(2)+" — token 2 gets "+(a[1]*100).toFixed(0)+
+    "% of the attention. Turn k₂ towards q and watch that share rise; turn it away and it collapses.";
+}
+["e2x","e2y"].forEach(id=>document.getElementById(id).oninput=drawQKV);
+drawQKV();
+
+/* ------------------------------------------------------- attention --- */
+const STOK=["Known","allergy","to","penicillin",";","treated","with","ceftriaxone"];
+const S=[[1.2,-0.4,-0.4,-0.4,-0.4,-0.4,-0.4,-0.4],
+         [1.1,1.2,-0.4,2.6,-0.4,-0.4,-0.4,-0.4],
+         [-0.4,0.9,1.2,-0.4,-0.4,-0.4,-0.4,-0.4],
+         [0.7,2.2,-0.4,1.2,-0.4,-0.4,-0.4,-0.4],
+         [-0.4,-0.4,-0.4,-0.4,1.2,-0.4,-0.4,-0.4],
+         [-0.4,1.3,-0.4,1.1,-0.4,1.2,-0.4,-0.4],
+         [-0.4,-0.4,-0.4,-0.4,-0.4,1.4,1.2,-0.4],
+         [-0.4,2.4,-0.4,2.9,-0.4,1.2,0.6,1.2]];
+let selRow=7;
+function pattern(){
+  const useMask=document.getElementById("mask").checked;
+  const useSoft=document.getElementById("soft").checked;
+  return S.map((row,i)=>{
+    const r=row.map((v,j)=>(useMask&&j>i)?-Infinity:v);
+    if(!useSoft) return r.map(v=>v===-Infinity?NaN:v);
+    const fin=r.filter(v=>v!==-Infinity);
+    const m=Math.max(...fin);
+    const z=r.map(v=>v===-Infinity?0:Math.exp(v-m));
+    const t=z.reduce((a,b)=>a+b,0);
+    return z.map((v,j)=>(useMask&&j>i)?NaN:v/t);
+  });
+}
+function shade(f){
+  const stops=[[255,255,255],[212,222,229],[137,166,182],[47,88,110]];
+  f=Math.max(0,Math.min(1,f)); const x=f*(stops.length-1);
+  const i=Math.min(Math.floor(x),stops.length-2), t=x-i;
+  const c=stops[i].map((v,k)=>Math.round(v+t*(stops[i+1][k]-v)));
+  return "rgb("+c.join(",")+")";
+}
+function drawGrid(){
+  const A=pattern(), soft=document.getElementById("soft").checked;
+  const vals=A.flat().filter(v=>!isNaN(v));
+  const vmax=soft?Math.max(...vals):Math.max(...vals.map(v=>Math.max(v,0)));
+  let h="<colgroup><col class='lab'>"+STOK.map(()=>"<col class='cell'>").join("")+"</colgroup>";
+  A.forEach((row,i)=>{
+    h+="<tr class='"+(i===selRow?"hl":"")+"' onclick='pick("+i+")'>"+
+       "<td class='lab'>"+STOK[i]+"</td>";
+    row.forEach(v=>{
+      if(isNaN(v)){h+="<td style='background:#F4F6F7;color:#9AA4A9'>−∞</td>";return;}
+      const f=soft?v/vmax:Math.max(v,0)/vmax;
+      h+="<td style='background:"+shade(f)+";color:"+(f>0.55?"#fff":"#1A1A1A")+"'>"+
+         (soft?v.toFixed(2):v.toFixed(1))+"</td>";
+    });
+    h+="</tr>";
+  });
+  h+="<tr><td class='lab'></td>"+STOK.map(t=>"<td class='col'>"+t+"</td>").join("")+"</tr>";
+  const gEl=document.getElementById("grid");
+  // table-layout:fixed only takes effect with an explicit table width
+  gEl.style.width = (90 + STOK.length*46 + (STOK.length+2)*2) + "px";
+  gEl.innerHTML=h;
+  const row=A[selRow];
+  document.getElementById("rowTitle").textContent='query = „'+STOK[selRow]+'“';
+  document.getElementById("rowBars").innerHTML=row.map((v,j)=>{
+    if(isNaN(v)) return "";
+    const f=soft?v:Math.max(v,0)/vmax;
+    return "<div class='bar'><span class='n'>"+STOK[j]+"</span><span class='t'><i style='width:"+
+      (Math.max(0,f)*100).toFixed(1)+"%'></i></span><span class='v'>"+
+      (soft?(v*100).toFixed(0)+"%":v.toFixed(1))+"</span></div>";}).join("");
+  const sum=row.filter(v=>!isNaN(v)).reduce((a,b)=>a+b,0);
+  document.getElementById("rowSum").textContent = soft
+    ? "row sums to "+sum.toFixed(3)+" — one query, one probability distribution"
+    : "raw scaled scores, before the softmax";
+}
+function pick(i){selRow=i;drawGrid();}
+["mask","soft"].forEach(id=>document.getElementById(id).onchange=drawGrid);
+drawGrid();
+
+/* -------------------------------------------------------- generate --- */
+const VOCAB=["temperature","pulse","weight"], LOGITS=[2,1,0];
+function drawTemp(){
+  const T=+document.getElementById("temp").value;
+  document.getElementById("tempV").textContent=T.toFixed(1);
+  const p=softmax(LOGITS,T);
+  document.getElementById("tempBars").innerHTML=p.map((v,i)=>
+    "<div class='bar'><span class='n'>"+VOCAB[i]+"</span><span class='t'><i style='width:"+
+    (v*100).toFixed(1)+"%'></i></span><span class='v'>"+(v*100).toFixed(0)+"%</span></div>").join("");
+  return p;
+}
+document.getElementById("temp").oninput=drawTemp;
+document.getElementById("draw").onclick=()=>{
+  const p=drawTemp(), out=[];
+  for(let n=0;n<12;n++){let r=Math.random(),c=0,k=0;
+    for(k=0;k<p.length;k++){c+=p[k];if(r<=c)break;}
+    out.push(VOCAB[Math.min(k,2)]);}
+  document.getElementById("draws").textContent="„the nurse measures the …“  →  "+out.join(", ");
+};
+drawTemp();
+
+/* -------------------------------------------------------- exercise --- */
+document.getElementById("revealBtn").onclick=function(){
+  const r=document.getElementById("reveal");
+  const open=!r.classList.contains("hide");
+  r.classList.toggle("hide");
+  this.textContent = open ? "Show the solution" : "Hide the solution";
+};
+</script>
+</body>
+</html>
